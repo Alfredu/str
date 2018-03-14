@@ -28,7 +28,8 @@ void setup() {
 
 void setup_timer() {
   TCCR4A = 0;
-  TCCR4B = _BV(CS41)  | _BV(ICES4); //we set the prescaler to 8, the lowest possible to get maximum accuracy.
+  TCCR4B = _BV(CS41)  | _BV(ICES4); //we set the prescaler to 8, the lowest possible to get maximum accuracy. 
+  //and Input capture to rising edge
   
 }
 
@@ -68,7 +69,7 @@ ISR(TIMER4_CAPT_vect) {
                                                     //to the temp register.
     TCCR4B = 0;
     TCNT4=0;//stop the timer and then clearing it
-    TCCR4B = _BV(CS41) | _BV(ICES4); //set raising
+    TCCR4B = _BV(CS41) | _BV(ICES4); //set raising edge again
     
     unsigned int useconds = timer_value*0.5f;
     dist=(float)(useconds)/58.0f;
