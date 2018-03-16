@@ -14,11 +14,22 @@ HCSR04::HCSR04() {
   this->setupInterruption();
 }
 
-void HCSR04::createTrigger(){
-  result_ready=false;
+float HCSR04::createTrigger(){
+  this->result_ready=false;
   PORTA |= _BV(PA0);
   _delay_ms(20);
   PORTA &= ~_BV(PA0);
+  while(!TIFR1);
+  TIFR1 = 0;
+  TCCR1B = 0;
+  TCNT1=0;//stop the timer and then clearing it
+  TCCR1B = _BV(CS11);
+  while(!TIFR1);
+  TIFR1= 0;
+  unsigned int useconds = TCNT1*0.5f;
+  this->dist=(float)(useconds)/58.0f;
+  this->result_ready=true;
+  return this->dist;
 }
 
 boolean HCSR04::isResultReady() {
@@ -42,20 +53,6 @@ void HCSR04::setupInterruption() {
   sei(); //enable global interrupts
 }
 
-
-//Interrupt4 Service Routine
-ISR(INT4_vect) {
-  
-  if (!measuring_dist) {
-      TCCR1B = 0;
-      TCNT1=0;//stop the timer and then clearing it
-      TCCR1B = _BV(CS11); 
-      measuring_dist=1;
-    } else {
-      //0.5 comes from the CPU freq settings and the prescaler.
-      unsigned int useconds = TCNT1*0.5f;
-      dist=(float)(useconds)/58.0f;
-      measuring_dist=0;
-      result_ready=true;
-    }
+HCSR04::~HCSR04(){
 }
+

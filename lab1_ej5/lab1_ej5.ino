@@ -5,8 +5,8 @@
  * This program displays the distance in cm measured with 
  * the sensor HC-SR04.
  *
- * To do so, we use the 16 bit Timer1 and the input capture mode of this timer
- * We decided to use Timer1 to maximize timing and distance measuring accuracy.
+ * To do so, we use the 16 bit Timer4 and the input capture mode of this timer
+ * We decided to use Timer4 to maximize timing and distance measuring accuracy.
  * 
  */
 boolean measuring_dist = 0;

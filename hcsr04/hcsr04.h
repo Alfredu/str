@@ -24,12 +24,12 @@ public:
    * the sensor would generate echo signal that will enable
    * an interruption
    */
-  void createTrigger();
+  float createTrigger();
 	float returnResult();
   boolean isResultReady();
 private:
-  setupTimer();
-  setupInterruption();
+  void setupTimer();
+  void setupInterruption();
   boolean measuring_dist;
   float dist;
   boolean result_ready;
