@@ -2,20 +2,36 @@
 #include <avr/interrupt.h>
 #include "altIMU.h"
 /*
- * This program displays the distance in cm measured with 
- * the sensor HC-SR04.
- *
- * To do so, we use the 16 bit Timer1 and the Logic-level change interruption 4.
- * We decided to use Timer1 to maximize timing and distance measuring accuracy.
- * We decided to use interruption 4 to avoid clashing with other functions such as i2c.
+ * This programme measure the Euler angles with Polulu AltIMU-10 v5 sensor
+ * and dissplays the results in pitch-roll-yaw format.
+ * 
+ * We are using the source code of the arduino programme Pololu MinIMU-9 + Arduino AHRS 
+ * (Attitude and Heading Reference System) that can be found here;
+ * https://github.com/pololu/minimu-9-ahrs-arduino
+ * (Copyright (c) 2011 Pololu Corporation.
+ * http://www.pololu.com/)
  */
  
 
 
 altIMU sensor;
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   sensor = altIMU(1);
+
+  sensor.I2C_Init();
+  //delay(1500);
+  
+  sensor.Accel_Init();
+  sensor.Compass_Init();
+  sensor.Gyro_Init();
+
+  delay(20);
+
+  sensor.calculateOffset();
+
+
 }
 
 
@@ -23,9 +39,14 @@ void loop() {
 
   /*repeatedly creating triggers for the sensor and printing
     the distance value*/
-  int val = sensor.readValue();
-  
-  Serial.println(val);
+  sensor.readValue();
+  Serial.print("ANG:");
+  Serial.print(ToDeg(sensor.getRoll()));
+  Serial.print(",");
+  Serial.print(ToDeg(sensor.getPitch()));
+  Serial.print(",");
+  Serial.print(ToDeg(sensor.getYaw()));
+  Serial.print("\n");
 }
 
 

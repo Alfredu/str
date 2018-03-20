@@ -24,6 +24,7 @@ public:
    * the sensor would generate echo signal that will enable
    * an interruption
    */
+   void _setup();
   float createTrigger();
 	float returnResult();
   boolean isResultReady();

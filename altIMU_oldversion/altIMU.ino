@@ -1,6 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "hcsr04.h"
+#include "altIMU.h"
 /*
  * This program displays the distance in cm measured with 
  * the sensor HC-SR04.
@@ -10,21 +10,22 @@
  * We decided to use interruption 4 to avoid clashing with other functions such as i2c.
  */
  
-HCSR04 sensor;
 
+
+altIMU sensor;
 void setup() {
-  sensor._setup();
   Serial.begin(9600);
+  sensor = altIMU(1);
 }
 
 
 void loop() {
+
   /*repeatedly creating triggers for the sensor and printing
     the distance value*/
-  //HCSR04 sensor;
-  float val = sensor.createTrigger();
+  int val = sensor.readValue();
+  delay(500);
   Serial.println(val);
-  delay(50);
 }
 
 

@@ -1,6 +1,10 @@
 #include "hcsr04.h" //include the declaration for this class
 
 HCSR04::HCSR04() {
+  
+}
+
+void HCSR04::_setup() {
   measuring_dist=0;
   dist=0;
   result_ready=false;
@@ -19,13 +23,13 @@ float HCSR04::createTrigger(){
   PORTA |= _BV(PA0);
   _delay_ms(20);
   PORTA &= ~_BV(PA0);
-  while(!TIFR1);
-  TIFR1 = 0;
+  while(!(0b00010000 & EIFR));
+  EIFR = _BV(INTF4);
   TCCR1B = 0;
   TCNT1=0;//stop the timer and then clearing it
   TCCR1B = _BV(CS11);
-  while(!TIFR1);
-  TIFR1= 0;
+  while(!(0b00010000 & EIFR));
+  EIFR = _BV(INTF4);
   unsigned int useconds = TCNT1*0.5f;
   this->dist=(float)(useconds)/58.0f;
   this->result_ready=true;
@@ -49,7 +53,7 @@ void HCSR04::setupTimer() {
 void HCSR04::setupInterruption() {
   cli();
   EICRB = _BV(ISC40); //interrupt triggered by both falling and raising edge
-  EIMSK = _BV(INT4); //we enable interrupts by INT4 (pin2)
+  //EIMSK = _BV(INT4); //we enable interrupts by INT4 (pin2)
   sei(); //enable global interrupts
 }
 
