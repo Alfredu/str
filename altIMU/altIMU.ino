@@ -20,16 +20,7 @@ void setup() {
   Serial.begin(115200);
   sensor = altIMU(1);
 
-  sensor.I2C_Init();
-  //delay(1500);
-  
-  sensor.Accel_Init();
-  sensor.Compass_Init();
-  sensor.Gyro_Init();
 
-  delay(20);
-
-  sensor.calculateOffset();
 
 
 }
@@ -39,14 +30,13 @@ void loop() {
 
   /*repeatedly creating triggers for the sensor and printing
     the distance value*/
-  sensor.readValue();
-  Serial.print("ANG:");
-  Serial.print(ToDeg(sensor.getRoll()));
-  Serial.print(",");
-  Serial.print(ToDeg(sensor.getPitch()));
-  Serial.print(",");
-  Serial.print(ToDeg(sensor.getYaw()));
+
+  float res = sensor.getAngleAroundYAxis();
+
+  Serial.print("angulo alrededor eje Y: ");
+  Serial.print(res);
   Serial.print("\n");
+  
 }
 
 
