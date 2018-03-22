@@ -1,25 +1,33 @@
 #include "altIMU.h"
 #include "hcsr04.h"
 
-/* This programm uses both classes we have made for HCSR
+/* 
+ *  Laboratory 2: STR
  *  
+ * This program displays the values measured with two sensors
+ * at the same time: the value of the angle around Y-axis of accelerometer
+ * and the distance measured with HCSR04 sensor.
  */
 
-altIMU acc;
-HCSR04 diss;
+altIMU accelerometer;
+HCSR04 distSensor;
 
 void setup() {
-  // put your setup code here, to run once:
+ 
   Serial.begin(115200);
-  acc = altIMU(1);
-  diss._setup();
+  accelerometer.initiate();
+  distSensor.initiate();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  float resacc = acc.getAngleAroundYAxis();
-  float val = diss.createTrigger();
-  Serial.println(val);
-  Serial.println(resacc);
+
+  float angle = accelerometer.getAngleAroundYAxis();
+  float dist = distSensor.getDistance();
+  
+  Serial.print("Angle around Y-axis: ");
+  Serial.print(angle);
+  Serial.print("\tDistance: ");
+  Serial.print(dist);
+  Serial.print("\n");
   
 }

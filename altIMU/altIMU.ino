@@ -33,8 +33,12 @@ void loop() {
 
   float res = sensor.getAngleAroundYAxis();
 
-  Serial.print("angulo alrededor eje Y: ");
-  Serial.print(res);
+
+  Serial.print(ToDeg(sensor.getRoll()));
+  Serial.print("\t");
+  Serial.print(ToDeg(sensor.getPitch()));
+  Serial.print("\t");
+  Serial.print(ToDeg(sensor.getYaw()));
   Serial.print("\n");
   
 }

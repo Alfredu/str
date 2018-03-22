@@ -1,6 +1,8 @@
 #include "altIMU.h" //include the declaration for this class
 
-altIMU::altIMU(int x) {
+
+
+void altIMU::initiate() {
   Wire.begin();
   
   I2C_Init();
@@ -14,9 +16,7 @@ altIMU::altIMU(int x) {
 
   calculateOffset();
 }
-altIMU::altIMU() {
-}
-altIMU::~altIMU()  {};
+
 
 void altIMU::readValue() {
   if((millis()-timer)>=20)  // Main loop runs at 50Hz
@@ -413,6 +413,5 @@ float altIMU::getAngleAroundYAxis() {
   float p = ToDeg(getPitch());
   return p;
 }
-
 
 

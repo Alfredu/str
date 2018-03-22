@@ -1,10 +1,6 @@
 #include "hcsr04.h" //include the declaration for this class
 
-HCSR04::HCSR04() {
-  
-}
-
-void HCSR04::_setup() {
+void HCSR04::initiate() {
   measuring_dist=0;
   dist=0;
   result_ready=false;
@@ -14,12 +10,12 @@ void HCSR04::_setup() {
   PORTA = 0;
   //we set up PIN2 (PE4) as Echo 
   DDRE &= ~_BV(DDE4); //we set PE4 to input mode
-  this->setupTimer();
-  this->setupInterruption();
+  setupTimer();
+  setupInterruption();
 }
 
-float HCSR04::createTrigger(){
-  this->result_ready=false;
+float HCSR04::getDistance(){
+  result_ready=false;
   PORTA |= _BV(PA0);
   _delay_ms(20);
   PORTA &= ~_BV(PA0);
@@ -31,23 +27,14 @@ float HCSR04::createTrigger(){
   while(!(0b00010000 & EIFR));
   EIFR = _BV(INTF4);
   unsigned int useconds = TCNT1*0.5f;
-  this->dist=(float)(useconds)/58.0f;
-  this->result_ready=true;
-  return this->dist;
-}
-
-boolean HCSR04::isResultReady() {
-  return result_ready;
-}
-
-float HCSR04::returnResult() {
+  dist=(float)(useconds)/58.0f;
+  result_ready=true;
   return dist;
 }
 
 void HCSR04::setupTimer() {
   TCCR1A = 0;
-  TCCR1B = _BV(CS11); //we set the prescaler to 8, the lowest possible to get maximum accuracy.
-  
+  TCCR1B = _BV(CS11); //we set the prescaler to 8, the lowest possible to get maximum accuracy. 
 }
 
 void HCSR04::setupInterruption() {
@@ -57,6 +44,4 @@ void HCSR04::setupInterruption() {
   sei(); //enable global interrupts
 }
 
-HCSR04::~HCSR04(){
-}
 

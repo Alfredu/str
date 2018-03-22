@@ -16,18 +16,14 @@
 
 class HCSR04 { 
 public:
-	HCSR04();
-	~HCSR04();
-
-  /*
+	/*
    * in this function We generate high signal for trigger for >10ms so that 
    * the sensor would generate echo signal that will enable
    * an interruption
    */
-   void _setup();
-  float createTrigger();
-	float returnResult();
-  boolean isResultReady();
+	void initiate();
+  float getDistance();
+
 private:
   void setupTimer();
   void setupInterruption();

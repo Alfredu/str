@@ -46,16 +46,19 @@
 
 #define STATUS_LED 13
 /*
- * This class measures the inclination of the y axis in altIMU sensor
- *
-*/
+ * This class is to measure the Euler angles with Polulu AltIMU-10 v5 sensor
+ * and enables getting the results in pitch-roll-yaw format.
+ * 
+ * We are using the source code of the arduino programme Pololu MinIMU-9 + Arduino AHRS 
+ * (Attitude and Heading Reference System) that can be found here;
+ * https://github.com/pololu/minimu-9-ahrs-arduino
+ * (Copyright (c) 2011 Pololu Corporation.
+ * http://www.pololu.com/)
+ */
 
 class altIMU { 
 public:
-
-	altIMU(int x);
-  altIMU();
-	~altIMU();
+  void initiate();
   void readValue();
   void calculateOffset();
   void I2C_Init();
