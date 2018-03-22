@@ -27,9 +27,7 @@ public:
 private:
   void setupTimer();
   void setupInterruption();
-  boolean measuring_dist;
   float dist;
-  boolean result_ready;
 };
 
 #endif
