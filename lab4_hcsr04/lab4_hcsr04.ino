@@ -8,16 +8,20 @@
 */
 
 #include <Servo.h>
+#include "hcsr04.h"
 
 Servo myservo;  // create servo object to control a servo
 // twelve servo objects can be created on most boards
 
 int pos = 0;    // variable to store the servo position
+HCSR04 distSensor;
 
 void setup() {
+  distSensor.initiate();
   myservo.attach(9, 800,2350);  // attaches the servo on pin 9 to the servo object
   myservo.write(0);
   delay(1000);
+  Serial.begin(9600);
 }
   //avarage speed ((speed_divider) times slower than maximum)
   // 0.16 s - 60 deg /:60 (375 deg/s)
@@ -37,18 +41,21 @@ void servo_revolution(int speed_divider)
   }    
 }
 void loop() {
+  float distance = distSensor.getDistance();
+  float angles;
+  if(distance < 0.0f){
+    distance = 0.0f;
+  }
 
-  //maximum speed
-  // 0.16 s - 60 deg => This will run at 375 degrees/second
-  servo_revolution(1);
+  if(distance > 18.0f){
+    distance = 18.0f;
+  }
+
+  Serial.println(distance * 10.0f);
+
+
+  myservo.write(distance*10.0f);
   delay(100);
-  //average speed
-  //Since we are diving the speed by 2, this will run at (375/2) = 187.5 degrees/second
-  servo_revolution(2);
-  delay(100);
-  //low speed
-  //Since we are diving the speed by 5, this will run at (375/5) = 75 degrees/second
-  servo_revolution(5);
-  delay(1000);
+
 }
 
