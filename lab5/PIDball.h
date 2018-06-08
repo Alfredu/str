@@ -10,14 +10,15 @@
 class PIDball { 
 public:
   void setGoal(double);
-	double Compute();
-  void SetTunings(double Kp, double Ki, double Kd);
+	double compute(double, double);
+  void setTunings(double Kp, double Ki, double Kd);
   
 private:
   unsigned long lastTime;
-  double Setpoint;
+  double setPoints;
   double errSum, lastErr;
   double kp, ki, kd;
+  double transformValue(double, double);
 
 };
 
