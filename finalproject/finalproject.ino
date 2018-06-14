@@ -3,10 +3,16 @@
 #include <Servo.h>
 #include "PIDball.h"
 #include "hcsr04.h"
+#include "FreeRTOSConfig.h"
 
 Servo myservo;  // create servo object to control a servo
 HCSR04 distSensor;
 PIDball controller;
+
+char taskTrace[512] = {-1};
+int timingTrace[512] = {0};
+
+int index = 0;
 
 //shared resources
 double distance;
@@ -21,6 +27,10 @@ void TaskReadDistance( void *pvParameters );
 void TaskReadServoPosition( void *pvParameters );
 void TaskCalculate(void *pvParameters );
 void TaskSetServoPosition(void *pvParameters);
+extern void vTaskSetApplicationTaskTag(
+                        TaskHandle_t xTask,
+                        TaskHookFunction_t pxTagValue );
+
 
 void setup() {
   distSensor.initiate();
@@ -83,6 +93,15 @@ void setup() {
     ,  NULL
     ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
+
+    xTaskCreate(
+      TaskPrintTrace
+      , (const portCHAR *)"printTrace"
+      , 128
+      , NULL
+      , 4
+      , NULL);
+      
 }
 
 void loop() {
@@ -93,31 +112,32 @@ void loop() {
 /*--------------------------------------------------*/
 
 void TaskReadDistance( void *pvParameters ) {
-  (void) pvParameters;
-
+  //We set a task tag to identify the task in the tracer.
+  vTaskSetApplicationTaskTag(NULL, (TaskHookFunction_t) 1);
+ 
   for(;;) {
     if ( xSemaphoreTake( xDistanceSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       distance = distSensor.getDistance();
       xSemaphoreGive( xDistanceSemaphore ); //Now we free xDistanceSemaphore so it can be used by other tasks
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
   }
 }
 
 void TaskReadServoPosition( void *pvParameters ){
-  (void) pvParameters;
+  vTaskSetApplicationTaskTag(NULL, (TaskHookFunction_t) 2);
   for(;;) {
     if ( xSemaphoreTake( xPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       oldPosition = myservo.read();
       xSemaphoreGive( xPositionSemaphore ); //Now we free xPositionSemaphore so it can be used by other tasks
   
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
   }
 }
 
 void TaskCalculate(void *pvParameters ){
-  (void) pvParameters;
+  vTaskSetApplicationTaskTag(NULL, (TaskHookFunction_t) 3);
   for (;;) {
     if ( xSemaphoreTake( xDistanceSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       if ( xSemaphoreTake( xPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
@@ -129,18 +149,36 @@ void TaskCalculate(void *pvParameters ){
       }
       xSemaphoreGive( xDistanceSemaphore ); //Now we free xDistanceSemaphore so it can be used by other tasks
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
   }
 }
 
 void TaskSetServoPosition(void *pvParameters){
-  (void) pvParameters;
+  vTaskSetApplicationTaskTag(NULL, (TaskHookFunction_t) 4);
   for(;;) {
     if ( xSemaphoreTake( xNewPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       myservo.write(newPosition);
       xSemaphoreGive( xNewPositionSemaphore );
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
   }
+}
+
+void TaskPrintTrace(void *pvParameters){
+  (void) pvParameters;
+
+  for(;;){
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    for(int i = 0; i<index-1; i++){
+      Serial.println(taskTrace[i]+", "+timingTrace[i] - timingTrace[0]);
+    }
+  }
+}
+
+void logTaskSwitch(int tag){
+  taskTrace[index] = tag;
+  timingTrace[index] = millis();
+  index++;
 }
 

@@ -19,16 +19,15 @@ void setup() {
 }
 
 void loop() {
-  
+  double t0=millis();
   // current distance
   double input = distSensor.getDistance();
   // current position of the servo
+  
   double currentMotPos = myservo.read();
   // goal position of the servo
   double output = controller.compute(input, currentMotPos);
   myservo.write(output);
-  Serial.print(output);
-  Serial.print(" ");
-  Serial.print(input);
-  Serial.print("\n");
+  double t1=millis();
+  Serial.println(t1-t0);
 }
