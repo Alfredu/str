@@ -12,9 +12,11 @@ PIDball controller;
 
 int taskTrace[512] = {-1};
 int timingTrace[512] = {0};
+int priorityTrace[512];
 
 int index = 0;
-
+int nextCPriority = 2;
+boolean increasing = true;
 //shared resources
 double distance;
 double oldPosition;
@@ -23,11 +25,16 @@ double newPosition;
 SemaphoreHandle_t xDistanceSemaphore;
 SemaphoreHandle_t xPositionSemaphore;
 SemaphoreHandle_t xNewPositionSemaphore;
+TaskHandle_t xTaskAHandle,xTaskBHandle,xTaskCHandle;
 
 void TaskReadDistance( void *pvParameters );
 void TaskReadServoPosition( void *pvParameters );
 void TaskCalculate(void *pvParameters );
 void TaskSetServoPosition(void *pvParameters);
+void TaskA(void *pvParameters);
+void TaskB(void *pvParameters);
+void TaskC(void *pvParameters);
+void TaskChangePriority(void *pvParameters);
 extern void vTaskSetApplicationTaskTag(
                         TaskHandle_t xTask,
                         TaskHookFunction_t pxTagValue );
@@ -66,43 +73,74 @@ void setup() {
   xTaskCreate(
     TaskReadDistance
     ,  (const portCHAR *)"readDistance"   // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  6  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
     
   xTaskCreate(
     TaskReadServoPosition
     ,  (const portCHAR *)"readServoPosition"   // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  3  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  6  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
 
   xTaskCreate(
     TaskCalculate
     ,  (const portCHAR *)"calculate"   // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  5  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
 
   xTaskCreate(
     TaskSetServoPosition
     ,  (const portCHAR *)"setServoPosition"   // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  1  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  4  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
 
     xTaskCreate(
       TaskPrintTrace
       , (const portCHAR *)"printTrace"
-      , 256
+      , 128
       , NULL
-      , 4
+      , 7
       , NULL);
-      
+
+    xTaskCreate(
+      TaskA
+      , (const portCHAR *)"A"
+      , 128
+      , NULL
+      , 3
+      , &xTaskAHandle);
+
+    xTaskCreate(
+      TaskB
+      , (const portCHAR *)"B"
+      , 128
+      , NULL
+      , 2
+      , &xTaskBHandle);
+
+    xTaskCreate(
+      TaskC
+      , (const portCHAR *)"C"
+      , 128
+      , NULL
+      , 1
+      , &xTaskCHandle);
+
+    xTaskCreate(
+      TaskChangePriority
+      , (const portCHAR *)"ChangePriority"
+      , 128
+      , NULL
+      , 8
+      , NULL);
 }
 
 void loop() {
@@ -119,7 +157,7 @@ void TaskReadDistance( void *pvParameters ) {
   for(;;) {
     if ( xSemaphoreTake( xDistanceSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       
-    logTaskSwitch(1);
+    logTaskSwitch(1, 6);
       distance = distSensor.getDistance();
       xSemaphoreGive( xDistanceSemaphore ); //Now we free xDistanceSemaphore so it can be used by other tasks
     }
@@ -132,7 +170,7 @@ void TaskReadServoPosition( void *pvParameters ){
   for(;;) {
     if ( xSemaphoreTake( xPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       
-    logTaskSwitch(2);
+    logTaskSwitch(2, 6);
       oldPosition = myservo.read();
       xSemaphoreGive( xPositionSemaphore ); //Now we free xPositionSemaphore so it can be used by other tasks
   
@@ -148,7 +186,7 @@ void TaskCalculate(void *pvParameters ){
       if ( xSemaphoreTake( xPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
          if ( xSemaphoreTake( xNewPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
           
-    logTaskSwitch(3);
+    logTaskSwitch(3, 5);
            newPosition = controller.compute(distance, oldPosition);
            xSemaphoreGive( xNewPositionSemaphore );
          }
@@ -165,7 +203,7 @@ void TaskSetServoPosition(void *pvParameters){
   for(;;) {
     if ( xSemaphoreTake( xNewPositionSemaphore, ( TickType_t ) 1 ) == pdTRUE ) {
       
-    logTaskSwitch(4);
+    logTaskSwitch(4, 4);
       myservo.write(newPosition);
       xSemaphoreGive( xNewPositionSemaphore );
     }
@@ -181,16 +219,86 @@ void TaskPrintTrace(void *pvParameters){
 
     for(int i = 0; i<index-1; i++){
       char buff[32];
-      sprintf(buff, "%d, %d", taskTrace[i], timingTrace[i] - timingTrace[0]);
+      sprintf(buff, "TAG: %d, %d, PRIORITY: %d", taskTrace[i], timingTrace[i] - timingTrace[0], priorityTrace[i]);
       Serial.println(buff);
     }
     while(1);
   }
 }
 
-void logTaskSwitch(int tag){
+void TaskA(void *pvParameters){
+  (void) pvParameters;
+
+  for(;;) {
+    logTaskSwitch(5, uxTaskPriorityGet(NULL));
+    double t0 = millis();
+    while(millis()-t0 < 25) ;
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
+  }
+}
+
+void TaskB(void *pvParameters){
+  (void) pvParameters;
+
+  for(;;) {
+    logTaskSwitch(6, uxTaskPriorityGet(NULL));
+    double t0 = millis();
+    while(millis()-t0 < 25) ;
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
+  }
+}
+
+void TaskC(void *pvParameters){
+  (void) pvParameters;
+
+  for(;;) {
+    logTaskSwitch(7, uxTaskPriorityGet(NULL));
+    double t0 = millis();
+    while(millis()-t0 < 25);
+    vTaskDelay(PERIOD / portTICK_PERIOD_MS);
+  }
+}
+
+void TaskChangePriority(void *pvParameters){
+  (void) pvParameters;
+
+  for(;;) {
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    vTaskPrioritySet(xTaskCHandle, nextCPriority);
+
+    if(nextCPriority == 2 && increasing){
+      vTaskPrioritySet(xTaskBHandle, 1);
+    }
+    else if(nextCPriority == 1 && !increasing){
+      vTaskPrioritySet(xTaskBHandle, 2);
+    }
+    else if(nextCPriority == 3 && increasing){
+      vTaskPrioritySet(xTaskAHandle, 2);
+    }
+    else if(nextCPriority == 2 && !increasing ){
+      vTaskPrioritySet(xTaskAHandle, 3);
+    }
+
+    if(nextCPriority == 3){
+      increasing = false;
+    }
+    else if(nextCPriority == 1){
+      increasing = true;
+    }
+    
+    if(increasing){
+      nextCPriority++;
+    }
+    else{
+      nextCPriority--;
+    }
+  }
+}
+
+void logTaskSwitch(int tag, int priority){
   taskTrace[index] = tag;
   timingTrace[index] = millis();
+  priorityTrace[index] = priority;
   index++;
 }
 
